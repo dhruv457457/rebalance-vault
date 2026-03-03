@@ -1,0 +1,26 @@
+{
+  "name": "rebalance-vault",
+  "version": "1.0.0",
+  "description": "Automated Portfolio Rebalancer — contract.dev Stagenet Hackathon",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.ts --network stagenet",
+    "deposit": "hardhat run scripts/deposit.ts --network stagenet",
+    "status": "hardhat run scripts/check-status.ts --network stagenet",
+    "simulate": "hardhat run scripts/simulate-rebalances.ts --network stagenet",
+    "withdraw": "hardhat run scripts/withdraw.ts --network stagenet"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "@types/node": "^20.0.0",
+    "hardhat": "^2.19.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^1.1.0",
+    "@openzeppelin/contracts": "^5.0.0",
+    "dotenv": "^16.0.0"
+  }
+}
