@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --bg-primary: #0A0A0F;
+  --bg-surface: #13131A;
+  --bg-card: #1C1C28;
+  --accent-violet: #7C3AED;
+  --accent-cyan: #06B6D4;
+  --accent-coral: #F43F5E;
+  --accent-lime: #84CC16;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --border: #2D2D3D;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
+}
+
+.font-heading {
+  font-family: var(--font-space), 'Space Grotesk', sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+}
+
+/* Subtle grid background */
+.grid-bg {
+  background-image: linear-gradient(rgba(45, 45, 61, 0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 45, 61, 0.35) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Noise texture */
+.noise-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* Gradient border card */
+.gradient-border {
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #7C3AED33, #06B6D433);
+  z-index: -1;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2D2D3D;
+  border-radius: 3px;
+}
+
+/* Smooth transitions globally */
+a,
+button {
+  transition: all 0.15s ease;
+}
+
+/* Number formatting - always tabular */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
