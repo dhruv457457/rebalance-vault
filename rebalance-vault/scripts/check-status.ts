@@ -3,93 +3,70 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 async function main() {
-  const vaultAddress = process.env.VAULT_ADDRESS;
-  if (!vaultAddress) {
-    throw new Error("VAULT_ADDRESS not set in .env");
-  }
+  const diamondAddress = process.env.DIAMOND_ADDRESS;
+  if (!diamondAddress) throw new Error("DIAMOND_ADDRESS not set in .env");
 
-  const vault = await ethers.getContractAt("RebalanceVault", vaultAddress);
-  const provider = ethers.provider;
+  const view = await ethers.getContractAt("ViewFacet", diamondAddress);
+
+  console.log("═══════════════════════════════════════════════════════════");
+  console.log("  Diamond Vault — Status");
+  console.log("═══════════════════════════════════════════════════════════");
+
+  const summary = await view.getPortfolioSummary();
+  console.log("\n📊 Portfolio:");
+  console.log("  ETH value:   $" + ethers.formatUnits(summary.ethValueUsd, 18));
+  console.log("  USDC value:  $" + ethers.formatUnits(summary.usdcValueUsd, 18));
+  console.log("  Total:       $" + ethers.formatUnits(summary.totalUsd, 18));
+  console.log("  Drift:       " + summary.currentDrift.toString() + " bps");
+  console.log("  Target:      " + summary.targetBps.toString() + " bps");
+  console.log("  Shares:      " + summary.totalShares.toString());
+  console.log("  Paused:      " + summary.paused);
+
+  const stats = await view.getRebalanceStats();
+  console.log("\n🔄 Rebalance Stats:");
+  console.log("  Count:           " + stats.rebalanceCount.toString());
+  console.log("  Last block:      " + stats.lastRebalanceBlock.toString());
+  console.log("  Last price:      " + stats.lastRebalancePrice.toString());
+  console.log("  Volume swapped:  " + stats.totalVolumeSwapped.toString());
+  console.log("  Gas used:        " + stats.totalGasUsed.toString());
+  console.log("  Slippage lost:   " + stats.totalSlippageLost.toString());
+
+  const config = await view.getVaultConfig();
+  console.log("\n⚙️  Config:");
+  console.log("  Target:      " + config.targetAllocationBps.toString() + " bps");
+  console.log("  Drift thresh:" + config.driftThresholdBps.toString() + " bps");
+  console.log("  Max slippage:" + config.maxSlippageBps.toString() + " bps");
+  console.log("  Min interval:" + config.minRebalanceInterval.toString() + " blocks");
+  console.log("  Strategy:    " + config.activeStrategy);
+  console.log("  Swap adapter:" + config.swapAdapter);
+
+  const fees = await view.getFeeInfo();
+  console.log("\n💰 Fees:");
+  console.log("  Management:  " + fees.managementFeeBps.toString() + " bps");
+  console.log("  Performance: " + fees.performanceFeeBps.toString() + " bps");
+  console.log("  High water:  " + fees.highWaterMark.toString());
+  console.log("  Accrued:     " + fees.accruedFees.toString());
+  console.log("  Recipient:   " + fees.feeRecipient);
+
+  const guard = await view.getGuardStatus();
+  console.log("\n🛡️  Guard:");
+  console.log("  Circuit breaker: " + guard.circuitBreakerTripped);
+  console.log("  Max price chg:   " + guard.maxPriceChangeBps.toString() + " bps");
+  console.log("  Last price:      " + guard.lastKnownPrice.toString());
+  console.log("  Rebal in window: " + guard.rebalancesInWindow.toString());
+  console.log("  Max per window:  " + guard.maxRebalancesPerWindow.toString());
+  console.log("  Max swap size:   " + guard.maxSwapSizeBps.toString() + " bps");
+
+  const yield_ = await view.getYieldInfo();
+  console.log("\n🌱 Yield:");
+  console.log("  Deposited:   " + yield_.totalDepositedToAave.toString());
+  console.log("  Earned:      " + yield_.totalYieldEarned.toString());
+  console.log("  Enabled:     " + yield_.yieldEnabled);
+
+  const sharePrice = await view.getSharePrice();
+  console.log("\n📈 Share Price: $" + ethers.formatUnits(sharePrice, 18));
 
   console.log("\n═══════════════════════════════════════════════════════════");
-  console.log("  RebalanceVault — Status");
-  console.log("═══════════════════════════════════════════════════════════");
-  console.log(`  Address: ${vaultAddress}`);
-  console.log(`  Block:   ${await provider.getBlockNumber()}`);
-  console.log("═══════════════════════════════════════════════════════════\n");
-
-  // ── Portfolio Values ────────────────────────────────────────────────────────
-  const [ethValueUsd, usdcValueUsd, totalUsd] = await vault.getPortfolioValue();
-  console.log("Portfolio Value:");
-  console.log(`  ETH value:   $${formatUsd18(ethValueUsd)}`);
-  console.log(`  USDC value:  $${formatUsd18(usdcValueUsd)}`);
-  console.log(`  Total value: $${formatUsd18(totalUsd)}`);
-
-  // ── Allocation & Drift ──────────────────────────────────────────────────────
-  const drift = await vault.getCurrentDrift();
-  const targetBps = await vault.targetAllocationBps();
-  const thresholdBps = await vault.driftThresholdBps();
-  const maxSlippageBps = await vault.maxSlippageBps();
-
-  const currentEthPct =
-    totalUsd > 0n
-      ? ((ethValueUsd * 10000n) / totalUsd)
-      : 0n;
-
-  console.log("\nAllocation:");
-  console.log(`  Target ETH:     ${targetBps.toString()} bps (${Number(targetBps) / 100}%)`);
-  console.log(`  Current ETH:    ${currentEthPct.toString()} bps (${Number(currentEthPct) / 100}%)`);
-  console.log(`  Drift:          ${drift.toString()} bps`);
-  console.log(`  Drift threshold: ${thresholdBps.toString()} bps`);
-  console.log(
-    `  Rebalance needed: ${Math.abs(Number(drift)) > Number(thresholdBps) ? "YES ✓" : "NO"}`
-  );
-
-  // ── Rebalance History ───────────────────────────────────────────────────────
-  const rebalanceCount = await vault.rebalanceCount();
-  const lastRebalanceBlock = await vault.lastRebalanceBlock();
-  const minInterval = await vault.minRebalanceInterval();
-  const currentBlock = BigInt(await provider.getBlockNumber());
-  const blocksUntilNext =
-    lastRebalanceBlock + minInterval > currentBlock
-      ? lastRebalanceBlock + minInterval - currentBlock
-      : 0n;
-
-  console.log("\nRebalance History:");
-  console.log(`  Total rebalances:     ${rebalanceCount.toString()}`);
-  console.log(`  Last rebalance block: ${lastRebalanceBlock.toString()}`);
-  console.log(`  Min interval:         ${minInterval.toString()} blocks`);
-  console.log(
-    `  Blocks until next:    ${blocksUntilNext.toString()} blocks`
-  );
-
-  // ── Shares & Balances ───────────────────────────────────────────────────────
-  const totalShares = await vault.totalShares();
-  const ethBalance = await provider.getBalance(vaultAddress);
-  const usdcToken = await ethers.getContractAt(
-    ["function balanceOf(address) view returns (uint256)"],
-    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-  );
-  const usdcBalance = await usdcToken.balanceOf(vaultAddress);
-
-  console.log("\nRaw Balances:");
-  console.log(`  ETH balance:   ${ethers.formatEther(ethBalance)} ETH`);
-  console.log(`  USDC balance:  ${formatUsdc(usdcBalance)} USDC`);
-  console.log(`  Total shares:  ${totalShares.toString()}`);
-
-  // ── Config ──────────────────────────────────────────────────────────────────
-  console.log("\nConfiguration:");
-  console.log(`  Max slippage:  ${maxSlippageBps.toString()} bps (${Number(maxSlippageBps) / 100}%)`);
-
-  console.log("\n═══════════════════════════════════════════════════════════\n");
-}
-
-function formatUsd18(value: bigint): string {
-  return (Number(value) / 1e18).toFixed(2);
-}
-
-function formatUsdc(value: bigint): string {
-  return (Number(value) / 1e6).toFixed(2);
 }
 
 main().catch((error) => {

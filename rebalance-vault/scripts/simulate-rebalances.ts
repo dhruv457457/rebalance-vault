@@ -9,110 +9,83 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function formatUsd18(value: bigint): string {
-  return (Number(value) / 1e18).toFixed(2);
-}
-
 async function main() {
-  const vaultAddress = process.env.VAULT_ADDRESS;
-  if (!vaultAddress) {
-    throw new Error("VAULT_ADDRESS not set in .env");
-  }
+  const diamondAddress = process.env.DIAMOND_ADDRESS;
+  if (!diamondAddress) throw new Error("DIAMOND_ADDRESS not set in .env");
 
   const [signer] = await ethers.getSigners();
-  const vault = await ethers.getContractAt("RebalanceVault", vaultAddress, signer);
+  const rebalance = await ethers.getContractAt("RebalanceFacet", diamondAddress);
+  const view = await ethers.getContractAt("ViewFacet", diamondAddress);
+  const oracle = await ethers.getContractAt("OracleFacet", diamondAddress);
 
-  console.log("\n═══════════════════════════════════════════════════════════");
-  console.log("  RebalanceVault — Simulate Rebalances");
   console.log("═══════════════════════════════════════════════════════════");
-  console.log(`  Vault:      ${vaultAddress}`);
-  console.log(`  Signer:     ${signer.address}`);
-  console.log(`  Iterations: ${ITERATIONS} (${SLEEP_MS / 1000}s between each)`);
+  console.log("  Diamond Vault — Simulate Rebalances");
+  console.log("═══════════════════════════════════════════════════════════");
+  console.log("  Diamond:", diamondAddress);
+  console.log("  Iterations:", ITERATIONS);
   console.log("═══════════════════════════════════════════════════════════\n");
 
   let totalRebalances = 0;
 
   for (let i = 1; i <= ITERATIONS; i++) {
-    const currentBlock = await ethers.provider.getBlockNumber();
-    console.log(`─── Iteration ${i}/${ITERATIONS}  (block ${currentBlock}) ───`);
+    const block = await ethers.provider.getBlockNumber();
+    console.log(`─── Iteration ${i}/${ITERATIONS}  (block ${block}) ───`);
 
     try {
-      // Check if upkeep is needed
-      const [upkeepNeeded] = await vault.checkUpkeep("0x");
-      const drift = await vault.getCurrentDrift();
-      const absDrift = drift < 0n ? -drift : drift;
+      const [upkeepNeeded] = await rebalance.checkUpkeep("0x");
 
       if (upkeepNeeded) {
-        console.log(`  Rebalance needed! Drift: ${drift.toString()} bps`);
+        const drift = await oracle.getCurrentDrift();
+        console.log("  Rebalance needed! Drift:", drift.toString(), "bps");
 
-        const tx = await vault.performUpkeep("0x");
-        console.log(`  Tx submitted: ${tx.hash}`);
+        const tx = await rebalance.performUpkeep("0x");
         const receipt = await tx.wait();
-        console.log(`  Confirmed in block ${receipt?.blockNumber}`);
-
-        // Parse Rebalanced event
-        const rebalancedEvent = receipt?.logs
-          .map((log) => {
-            try {
-              return vault.interface.parseLog(log);
-            } catch {
-              return null;
-            }
-          })
-          .find((e) => e?.name === "Rebalanced");
-
-        if (rebalancedEvent) {
-          const { soldEth, swapAmount, driftBefore, driftAfter } =
-            rebalancedEvent.args;
-          console.log(`  Direction:    ${soldEth ? "Sold ETH → USDC" : "Sold USDC → ETH"}`);
-          console.log(
-            `  Swap amount:  ${soldEth ? ethers.formatEther(swapAmount) + " ETH" : (Number(swapAmount) / 1e6).toFixed(2) + " USDC"}`
-          );
-          console.log(`  Drift before: ${driftBefore.toString()} bps`);
-          console.log(`  Drift after:  ${driftAfter.toString()} bps`);
-        }
-
+        console.log("  Tx:", tx.hash);
+        console.log("  Block:", receipt?.blockNumber);
         totalRebalances++;
+
+        const newDrift = await oracle.getCurrentDrift();
+        console.log("  Drift after:", newDrift.toString(), "bps");
       } else {
-        console.log(`  No rebalance needed. Current drift: ${drift.toString()} bps (threshold: >${(await vault.driftThresholdBps()).toString()} bps)`);
+        const drift = await oracle.getCurrentDrift();
+        console.log("  No rebalance needed. Drift:", drift.toString(), "bps");
       }
 
-      // Print portfolio snapshot every 5 iterations
       if (i % 5 === 0) {
-        const [ethValueUsd, usdcValueUsd, totalUsd] =
-          await vault.getPortfolioValue();
+        const summary = await view.getPortfolioSummary();
         console.log("\n  Portfolio snapshot:");
-        console.log(`    ETH value:   $${formatUsd18(ethValueUsd)}`);
-        console.log(`    USDC value:  $${formatUsd18(usdcValueUsd)}`);
-        console.log(`    Total value: $${formatUsd18(totalUsd)}\n`);
+        console.log("    ETH:   $" + ethers.formatUnits(summary.ethValueUsd, 18));
+        console.log("    USDC:  $" + ethers.formatUnits(summary.usdcValueUsd, 18));
+        console.log("    Total: $" + ethers.formatUnits(summary.totalUsd, 18));
+        console.log("");
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.log(`  Error: ${message.slice(0, 120)}`);
+    } catch (error: any) {
+      console.log("  Error:", error.message?.substring(0, 100));
     }
 
     if (i < ITERATIONS) {
-      console.log(`  Waiting ${SLEEP_MS / 1000}s...\n`);
+      console.log("  Waiting " + SLEEP_MS / 1000 + "s...\n");
       await sleep(SLEEP_MS);
     }
   }
 
-  // ── Final Summary ───────────────────────────────────────────────────────────
   console.log("\n═══════════════════════════════════════════════════════════");
   console.log("  Simulation Complete");
   console.log("═══════════════════════════════════════════════════════════");
-  console.log(`  Rebalances triggered this session: ${totalRebalances}`);
-  console.log(`  Total rebalances (all time):       ${await vault.rebalanceCount()}`);
-  console.log(`  Last rebalance block:              ${await vault.lastRebalanceBlock()}`);
+  console.log("  Rebalances this session:", totalRebalances);
 
-  const [ethValueUsd, usdcValueUsd, totalUsd] = await vault.getPortfolioValue();
-  const drift = await vault.getCurrentDrift();
-  console.log("\n  Final portfolio state:");
-  console.log(`    ETH value:   $${formatUsd18(ethValueUsd)}`);
-  console.log(`    USDC value:  $${formatUsd18(usdcValueUsd)}`);
-  console.log(`    Total value: $${formatUsd18(totalUsd)}`);
-  console.log(`    Drift:       ${drift.toString()} bps`);
-  console.log("═══════════════════════════════════════════════════════════\n");
+  const stats = await view.getRebalanceStats();
+  console.log("  Total rebalances (all time):", stats.rebalanceCount.toString());
+  console.log("  Total volume:", stats.totalVolumeSwapped.toString());
+  console.log("  Total gas:", stats.totalGasUsed.toString());
+
+  const summary = await view.getPortfolioSummary();
+  console.log("\n  Final state:");
+  console.log("    ETH:   $" + ethers.formatUnits(summary.ethValueUsd, 18));
+  console.log("    USDC:  $" + ethers.formatUnits(summary.usdcValueUsd, 18));
+  console.log("    Total: $" + ethers.formatUnits(summary.totalUsd, 18));
+  console.log("    Drift: " + summary.currentDrift.toString() + " bps");
+  console.log("═══════════════════════════════════════════════════════════");
 }
 
 main().catch((error) => {

@@ -3,59 +3,32 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 async function main() {
-  const vaultAddress = process.env.VAULT_ADDRESS;
-  if (!vaultAddress) {
-    throw new Error("VAULT_ADDRESS not set in .env");
-  }
+  const diamondAddress = process.env.DIAMOND_ADDRESS;
+  if (!diamondAddress) throw new Error("DIAMOND_ADDRESS not set in .env");
 
   const [signer] = await ethers.getSigners();
-  console.log("\n═══════════════════════════════════════════════════════════");
-  console.log("  RebalanceVault — Deposit Script");
   console.log("═══════════════════════════════════════════════════════════");
-  console.log(`  Vault:    ${vaultAddress}`);
-  console.log(`  Signer:   ${signer.address}`);
-  console.log(
-    `  Balance:  ${ethers.formatEther(await ethers.provider.getBalance(signer.address))} ETH`
-  );
-  console.log("═══════════════════════════════════════════════════════════\n");
+  console.log("  Deposit to Diamond Vault");
+  console.log("═══════════════════════════════════════════════════════════");
+  console.log("  Diamond:", diamondAddress);
+  console.log("  Signer:", signer.address);
 
-  const vault = await ethers.getContractAt("RebalanceVault", vaultAddress, signer);
+  const vault = await ethers.getContractAt("VaultFacet", diamondAddress);
+  const view = await ethers.getContractAt("ViewFacet", diamondAddress);
 
-  // ── Deposit ETH ────────────────────────────────────────────────────────────
-  const depositAmount = ethers.parseEther("5");
-  console.log(`Depositing ${ethers.formatEther(depositAmount)} ETH...`);
-
-  const tx = await vault.deposit({ value: depositAmount });
-  console.log(`  Tx hash: ${tx.hash}`);
+  console.log("\nDepositing 5 ETH...");
+  const tx = await vault.deposit({ value: ethers.parseEther("5") });
   const receipt = await tx.wait();
-  console.log(`  Confirmed in block ${receipt?.blockNumber}\n`);
+  console.log("  Tx:", tx.hash);
+  console.log("  Block:", receipt?.blockNumber);
 
-  // ── Portfolio snapshot after deposit ───────────────────────────────────────
-  const [ethValueUsd, usdcValueUsd, totalUsd] = await vault.getPortfolioValue();
-  const userShares = await vault.shares(signer.address);
-  const totalShares = await vault.totalShares();
-  const drift = await vault.getCurrentDrift();
-
-  console.log("Portfolio after deposit:");
-  console.log(
-    `  ETH value:   $${formatUsd18(ethValueUsd)}`
-  );
-  console.log(
-    `  USDC value:  $${formatUsd18(usdcValueUsd)}`
-  );
-  console.log(
-    `  Total value: $${formatUsd18(totalUsd)}`
-  );
-  console.log(`  Current drift: ${drift.toString()} bps`);
-  console.log(`  Your shares:   ${userShares.toString()}`);
-  console.log(`  Total shares:  ${totalShares.toString()}`);
-  console.log(
-    `\nTip: Deposit USDC via USDC faucet on contract.dev, then call depositUSDC(amount).`
-  );
-}
-
-function formatUsd18(value: bigint): string {
-  return (Number(value) / 1e18).toFixed(2);
+  const summary = await view.getPortfolioSummary();
+  console.log("\nPortfolio after deposit:");
+  console.log("  ETH value:  $" + ethers.formatUnits(summary.ethValueUsd, 18));
+  console.log("  USDC value: $" + ethers.formatUnits(summary.usdcValueUsd, 18));
+  console.log("  Total:      $" + ethers.formatUnits(summary.totalUsd, 18));
+  console.log("  Drift:", summary.currentDrift.toString(), "bps");
+  console.log("  Shares:", summary.totalShares.toString());
 }
 
 main().catch((error) => {

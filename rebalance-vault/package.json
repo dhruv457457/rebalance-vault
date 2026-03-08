@@ -2,13 +2,13 @@
   "name": "rebalance-vault",
   "version": "1.0.0",
   "description": "Automated Portfolio Rebalancer — contract.dev Stagenet Hackathon",
-  "scripts": {
+   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test",
-    "deploy": "hardhat run scripts/deploy.ts --network stagenet",
+    "deploy": "hardhat run scripts/deploy-diamond.ts --network stagenet",
     "deposit": "hardhat run scripts/deposit.ts --network stagenet",
     "status": "hardhat run scripts/check-status.ts --network stagenet",
     "simulate": "hardhat run scripts/simulate-rebalances.ts --network stagenet",
+    "switch-strategy": "hardhat run scripts/switch-strategy.ts --network stagenet",
     "withdraw": "hardhat run scripts/withdraw.ts --network stagenet"
   },
   "devDependencies": {
