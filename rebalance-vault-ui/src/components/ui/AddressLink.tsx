@@ -16,7 +16,7 @@ export function AddressLink({ address, className = '', showFull = false }: Addre
       href={explorerUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className={`font-mono text-cyan-400 hover:text-cyan-300 hover:underline transition-colors ${className}`}
+      className={`font-mono text-[#CAFF04] hover:text-[#d4ff33] hover:underline transition-colors text-xs ${className}`}
     >
       {showFull ? address : formatAddress(address)}
     </a>

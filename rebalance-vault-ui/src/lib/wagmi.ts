@@ -12,7 +12,10 @@ export const stagenet = defineChain({
     default: { http: ['https://rpc.contract.dev/988676b94cce2d8cbb1e2c648e864c2b'] },
   },
   blockExplorers: {
-    default: { name: 'Explorer', url: 'https://explorer.contract.dev' },
+    default: {
+      name: 'Stagenet Explorer',
+      url: 'https://app.contract.dev/app/projects/6d87e5f7-548d-422c-b9c8-9c75d763e92e/explorer',
+    },
   },
 });
 

@@ -177,6 +177,41 @@ export const VAULT_ABI = [
     inputs: [{ name: '', type: 'bytes' }],
     outputs: [],
   },
+  {
+    name: 'depositToYield',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'amount', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    name: 'withdrawFromYield',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'amount', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    name: 'harvestYield',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: [],
+  },
+  {
+    name: 'setYieldEnabled',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'enabled', type: 'bool' }],
+    outputs: [],
+  },
+  {
+    name: 'setActiveStrategy',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'strategy', type: 'address' }],
+    outputs: [],
+  },
   // ─── Events ───────────────────────────────────────────────────────────
   {
     name: 'Deposited',

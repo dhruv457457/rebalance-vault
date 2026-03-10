@@ -1,7 +1,6 @@
 'use client';
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { motion } from 'framer-motion';
 
 interface PortfolioPieChartProps {
   ethValueUsd: bigint;
@@ -10,7 +9,8 @@ interface PortfolioPieChartProps {
   size?: 'sm' | 'lg';
 }
 
-const COLORS = ['#06B6D4', '#7C3AED'];
+// DRIFT colors: lime for ETH, purple for USDC
+const COLORS = ['#CAFF04', '#7B61FF'];
 
 function formatPct(a: bigint, b: bigint): string {
   if (b === 0n) return '50.00';
@@ -27,8 +27,9 @@ export function PortfolioPieChart({ ethValueUsd, usdcValueUsd, totalUsd, size = 
 
   const ethPct = formatPct(ethValueUsd, totalUsd);
   const usdcPct = formatPct(usdcValueUsd, totalUsd);
-  const outerRadius = size === 'lg' ? 130 : 70;
-  const innerRadius = size === 'lg' ? 80 : 45;
+  const outerRadius = size === 'lg' ? 120 : 65;
+  const innerRadius = size === 'lg' ? 72 : 40;
+  const chartHeight = outerRadius * 2 + 32;
 
   return (
     <div className="relative flex flex-col items-center">
@@ -36,15 +37,16 @@ export function PortfolioPieChart({ ethValueUsd, usdcValueUsd, totalUsd, size = 
       <div
         className="absolute rounded-full pointer-events-none"
         style={{
-          width: outerRadius * 2 + 40,
-          height: outerRadius * 2 + 40,
-          background: 'radial-gradient(circle, rgba(124,58,237,0.18) 0%, rgba(6,182,212,0.10) 60%, transparent 80%)',
+          width: outerRadius * 2 + 60,
+          height: outerRadius * 2 + 60,
+          background: 'radial-gradient(circle, rgba(202,255,4,0.12) 0%, rgba(123,97,255,0.08) 50%, transparent 75%)',
           top: '50%',
           left: '50%',
-          transform: 'translate(-50%, -50%)',
+          transform: 'translate(-50%, -55%)',
         }}
       />
-      <ResponsiveContainer width="100%" height={outerRadius * 2 + 40}>
+
+      <ResponsiveContainer width="100%" height={chartHeight}>
         <PieChart>
           <Pie
             data={data}
@@ -62,27 +64,41 @@ export function PortfolioPieChart({ ethValueUsd, usdcValueUsd, totalUsd, size = 
             ))}
           </Pie>
           <Tooltip
-            contentStyle={{ background: '#1C1C28', border: '1px solid #2D2D3D', borderRadius: '8px', color: '#F8FAFC' }}
-            formatter={(value, name) => [`${((Number(value) / (eth + usdc || 1)) * 100).toFixed(2)}%`, String(name)]}
+            contentStyle={{
+              background: '#111111',
+              border: '1px solid #1A1A1A',
+              borderRadius: '12px',
+              color: '#FFFFFF',
+              fontSize: '12px',
+              fontWeight: 'bold',
+            }}
+            formatter={(value, name) => [
+              `${((Number(value) / (eth + usdc || 1)) * 100).toFixed(2)}%`,
+              String(name),
+            ]}
           />
         </PieChart>
       </ResponsiveContainer>
 
-      {/* Center text */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <span className="text-[#94A3B8] text-xs uppercase tracking-widest">Allocation</span>
-        <span className="font-mono text-white text-sm font-bold mt-0.5">50/50 Target</span>
+      {/* Center text overlay */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ bottom: 32 }}>
+        <span className="text-[#888] text-[10px] font-black uppercase tracking-widest">TARGET</span>
+        <span className="font-black text-white text-sm mt-0.5">50/50</span>
       </div>
 
       {/* Legend */}
-      <div className="flex gap-6 mt-4">
+      <div className="flex gap-6 mt-3">
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-cyan-400 inline-block" />
-          <span className="text-sm font-mono text-white">ETH <span className="text-cyan-400">{ethPct}%</span></span>
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: '#CAFF04' }} />
+          <span className="text-xs font-bold text-white uppercase tracking-wider">
+            ETH <span className="text-[#CAFF04]">{ethPct}%</span>
+          </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-violet-500 inline-block" />
-          <span className="text-sm font-mono text-white">USDC <span className="text-violet-400">{usdcPct}%</span></span>
+          <span className="w-2.5 h-2.5 rounded-sm" style={{ background: '#7B61FF' }} />
+          <span className="text-xs font-bold text-white uppercase tracking-wider">
+            USDC <span className="text-[#7B61FF]">{usdcPct}%</span>
+          </span>
         </div>
       </div>
     </div>

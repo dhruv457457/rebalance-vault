@@ -35,16 +35,16 @@ export function WithdrawForm() {
   }
 
   return (
-    <div className="bg-[#1C1C28] border border-[#2D2D3D] rounded-xl p-5 mt-4">
-      <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-        <span className="text-2xl">📤</span> Withdraw
-      </h3>
+    <div className="bg-[#111111] border border-[#1A1A1A] rounded-2xl p-5">
+      <h3 className="font-black text-sm uppercase tracking-widest text-[#888] mb-4">Withdraw</h3>
 
       <div className="space-y-4">
         <div>
-          <div className="flex justify-between mb-2">
-            <span className="text-[#94A3B8] text-xs">Withdraw {pct}% of your shares</span>
-            <span className="text-white font-mono text-xs">
+          <div className="flex justify-between mb-3">
+            <span className="text-xs font-black uppercase tracking-widest text-[#888]">
+              WITHDRAW {pct}%
+            </span>
+            <span className="font-mono text-xs text-white font-bold">
               {shares ? Number(formatUnits(sharesToWithdraw, 18)).toFixed(4) : '0.0000'} shares
             </span>
           </div>
@@ -54,57 +54,63 @@ export function WithdrawForm() {
             max="100"
             value={pct}
             onChange={(e) => setPct(Number(e.target.value))}
-            className="w-full accent-violet-500"
+            className="w-full h-2 rounded-full appearance-none cursor-pointer"
+            style={{ accentColor: '#CAFF04' }}
           />
-          <div className="flex justify-between text-xs text-[#94A3B8] mt-1">
-            <span>1%</span><span>50%</span><span>100%</span>
+          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-[#888] mt-1.5">
+            <span>1%</span>
+            <span>50%</span>
+            <span>100%</span>
           </div>
         </div>
 
         {txError && (
-          <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
-            <p className="text-rose-400 text-xs font-medium">⚠ {txError.message}</p>
+          <div className="bg-[#FF4444]/10 border border-[#FF4444]/30 rounded-xl px-4 py-3">
+            <p className="text-[#FF4444] text-xs font-bold">{txError.message}</p>
             {txError.hint && (
-              <p className="text-rose-300/70 text-xs mt-1 leading-relaxed">{txError.hint}</p>
+              <p className="text-[#FF4444]/60 text-xs mt-1 leading-relaxed">{txError.hint}</p>
             )}
           </div>
         )}
+
         {isSuccess && (
-          <p className="text-emerald-400 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">✓ Withdrawal confirmed!</p>
+          <p className="text-[#00FF88] text-xs bg-[#00FF88]/10 border border-[#00FF88]/30 rounded-xl px-4 py-3 font-bold">
+            ✓ WITHDRAWAL CONFIRMED
+          </p>
         )}
 
         <motion.button
           onClick={handleWithdraw}
           disabled={isPending || !shares || shares === 0n}
           whileTap={{ scale: 0.97 }}
-          className="w-full py-3 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm uppercase tracking-wider transition-all"
+          className="w-full py-3.5 rounded-xl border-2 border-[#CAFF04] text-[#CAFF04] font-black text-xs uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#CAFF04]/10 transition-all"
         >
-          {isPending ? 'Confirming...' : `Withdraw ${pct}%`}
+          {isPending ? 'CONFIRMING...' : `WITHDRAW ${pct}%`}
         </motion.button>
 
         {/* Emergency withdraw */}
         <div>
           <button
             onClick={() => setShowEmergency(!showEmergency)}
-            className="text-xs text-[#94A3B8] hover:text-rose-400 transition-colors flex items-center gap-1"
+            className="text-[10px] font-black uppercase tracking-widest text-[#888] hover:text-[#FF4444] transition-colors"
           >
-            ⚠ Emergency Withdraw
+            ⚠ EMERGENCY WITHDRAW
           </button>
           {showEmergency && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="mt-2"
+              className="mt-3"
             >
-              <p className="text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2 mb-2">
-                Warning: Emergency withdraw bypasses normal checks. Use only in extreme situations.
+              <p className="text-xs text-[#FF4444]/80 bg-[#FF4444]/10 border border-[#FF4444]/30 rounded-xl px-3 py-2 mb-2 leading-relaxed">
+                Emergency withdraw bypasses normal checks. Use only in extreme situations.
               </p>
               <button
                 onClick={handleEmergency}
                 disabled={isPending}
-                className="w-full py-2 rounded-lg border border-rose-500/50 text-rose-400 text-xs hover:bg-rose-500/10 disabled:opacity-50 transition-all"
+                className="w-full py-2.5 rounded-xl border border-[#FF4444]/50 text-[#FF4444] text-xs font-black uppercase tracking-widest hover:bg-[#FF4444]/10 disabled:opacity-40 transition-all"
               >
-                {isPending ? 'Processing...' : 'Confirm Emergency Withdraw'}
+                {isPending ? 'PROCESSING...' : 'CONFIRM EMERGENCY WITHDRAW'}
               </button>
             </motion.div>
           )}

@@ -6,29 +6,30 @@ interface StatCardProps {
   label: string;
   value: React.ReactNode;
   subValue?: string;
-  accent?: 'violet' | 'cyan' | 'coral' | 'lime' | 'green';
+  accent?: 'lime' | 'purple' | 'cyan' | 'red' | 'green' | 'white';
   className?: string;
 }
 
-const accentMap = {
-  violet: 'border-t-violet-500',
-  cyan: 'border-t-cyan-400',
-  coral: 'border-t-rose-500',
-  lime: 'border-t-lime-400',
-  green: 'border-t-emerald-500',
+const accentColors: Record<string, string> = {
+  lime: 'text-[#CAFF04]',
+  purple: 'text-[#7B61FF]',
+  cyan: 'text-[#00F0FF]',
+  red: 'text-[#FF4444]',
+  green: 'text-[#00FF88]',
+  white: 'text-white',
 };
 
-export function StatCard({ label, value, subValue, accent = 'violet', className = '' }: StatCardProps) {
+export function StatCard({ label, value, subValue, accent = 'lime', className = '' }: StatCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className={`bg-[#1C1C28] border border-[#2D2D3D] border-t-2 ${accentMap[accent]} rounded-xl p-5 ${className}`}
+      className={`bg-[#111111] border border-[#1A1A1A] rounded-2xl p-5 card-hover ${className}`}
     >
-      <p className="text-[#94A3B8] text-xs font-medium uppercase tracking-widest mb-2">{label}</p>
-      <div className="text-white font-mono text-2xl font-bold leading-tight">{value}</div>
-      {subValue && <p className="text-[#94A3B8] text-xs mt-1">{subValue}</p>}
+      <p className="text-xs font-bold uppercase tracking-widest text-[#888] mb-3">{label}</p>
+      <div className={`font-black text-2xl leading-none tabular ${accentColors[accent]}`}>{value}</div>
+      {subValue && <p className="text-[#888] text-xs mt-2 uppercase tracking-wider font-bold">{subValue}</p>}
     </motion.div>
   );
 }
